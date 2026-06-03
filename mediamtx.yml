@@ -1,0 +1,4 @@
+paths:
+  obs_ingest/live:
+    source: publisher
+    runOnReady: systemctl start stream-consumer stream-feeder
