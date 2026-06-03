@@ -22,6 +22,24 @@ Unlike standard Nginx-RTMP fallback modules that suffer from 8-15 second connect
 * **Process Manipulation:** Advanced bash scripting using background process IDs (`$!`), sub-shells, and graceful termination signals to manage infinite loops without CPU exhaustion.
 * **Stream Multiplexing & Transcoding:** Utilizing `FFmpeg` for transport stream generation, codec copying (`-c copy`), and dynamic PTS/DTS timestamp manipulation across disjointed video inputs.
 
+## Asset Generation (The Fallback Payload)
+
+To achieve zero-latency switching via `FFmpeg`'s stream copy (`-c copy`), the fallback video must be pre-encoded to perfectly mirror the live OBS ingest parameters. Using a standard `.mp4` will corrupt the transport stream.
+
+The fallback asset must be packaged as an MPEG Transport Stream (`.ts`) with a forced Keyframe Interval (e.g., 120 frames for 60fps) and an exact audio sample rate match (e.g., 48kHz). 
+
+The following command forces the required H.264 Annex B byte stream format and generates the compliant fallback asset:
+
+```bash
+ffmpeg -i brb_raw.mp4 \
+-c:v libx264 -preset medium -b:v 6000k -maxrate 6000k -bufsize 12000k \
+-pix_fmt yuv420p -r 60 -g 120 -keyint_min 120 \
+-profile:v high -level 4.1 \
+-c:a aac -b:a 160k -ar 48000 -ac 2 \
+-bsf:v h264_mp4toannexb \
+-y brb_clone.ts
+```
+
 ## Deployment Files
 
 * `mediamtx.yml`: Hooks configuration to trigger daemons upon ingest connection.
