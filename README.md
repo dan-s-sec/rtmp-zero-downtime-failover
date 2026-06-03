@@ -43,7 +43,3 @@ While this infrastructure achieves sub-second failover latency by bypassing appl
 * **Strict Codec & Framerate Coupling:** Because the system utilizes FFmpeg's stream copy (`-c copy`) to bypass CPU-intensive re-encoding, the live ingest and the fallback video must be perfectly uniform. Any deviation in audio sample rate (e.g., 44.1kHz vs 48kHz), resolution, or Keyframe Interval (GOP size) between the two feeds will corrupt the transport stream during multiplexing, causing player desync or visual datamoshing.
 * **FIFO Blocking (Backpressure):** The architecture utilizes a single Linux Named Pipe (`/tmp/stream_pipe`). If the destination server (Twitch/YouTube) throttles the connection or the `consumer.sh` process hangs, the named pipe will block. This introduces backpressure that will eventually crash the `feeder.sh` ingest process. 
 * **Single Node Point-of-Failure:** This implementation provides high availability against client-side network drops, but the Ubuntu Droplet itself remains a single point of failure. It lacks BGP Anycast routing or DNS-level failover; if the datacenter experiences an outage, the broadcast drops.
-
-## Future Roadmap
-* Implement an application-layer health check (e.g., parsing `FFmpeg` standard output or probing the RTMP stream header) to replace the pure TCP socket monitor.
-* Containerize the `MediaMTX` and `FFmpeg` daemons using Docker for isolated process management and easier cross-environment deployment.
